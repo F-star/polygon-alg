@@ -4,10 +4,7 @@
  */
 
 // 计算图。。
-interface Point {
-  x: number,
-  y: number,
-}
+
 
 
 const getGraphFromPolygon = (points: Point[]) => {

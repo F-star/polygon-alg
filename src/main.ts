@@ -1,6 +1,7 @@
+import { Point } from "./type"
 
-const canvas = document.querySelector('canvas')
-const ctx = canvas.getContext('2d')
+const canvas = document.querySelector('canvas')!
+const ctx = canvas.getContext('2d')!
 
 canvas.width = 600
 canvas.height = 600
@@ -8,18 +9,18 @@ canvas.height = 600
 /**
  * @type {{x:number, y:number}[]}
  */
-const points = []
+const points: Point[] = []
 
 /**
  * @type {{x:number, y:number} | null}
  */
-let nextPoint = null
+let nextPoint: Point | null = null
 
 /**
  * 
  * @param {MouseEvent} e 
  */
-const onMousedown = (e) =>{
+const onMousedown = (e: MouseEvent) =>{
   // 绘制点
   const x = e.clientX
   const y = e.clientY
@@ -31,7 +32,7 @@ const onMousedown = (e) =>{
  * 
  * @param {MouseEvent} e 
  */
-const onMousemove = (e) => {
+const onMousemove = (e: MouseEvent) => {
   // 暂时不需要
   const x = e.clientX
   const y = e.clientY
