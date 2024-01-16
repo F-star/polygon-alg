@@ -50,6 +50,12 @@ const draw = () => {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // 计算交点
+  // if (allPoints.length > 3) {
+  const { crossPts, adjList, resultIndices, resultPoints } =
+    getOutlinePolygon(allPoints);
+  fillPolygon(resultPoints);
+
   // 绘制线
   ctx.beginPath();
   for (let i = 0; i < allPoints.length; i++) {
@@ -68,18 +74,13 @@ const draw = () => {
     drawNumText(p, i);
   }
 
-  // 计算交点
-  if (allPoints.length > 3) {
-    const { crossPts, adjList, resultIndices } = getOutlinePolygon(allPoints);
-    // for (const pt of crossPts) {
-    for (let i = 0; i < crossPts.length; i++) {
-      const pt = crossPts[i];
-      drawPoint(pt, "#f04");
-      drawNumText(pt, allPoints.length + i, "#f04");
-    }
-    document.querySelector("#outline")!.innerHTML = resultIndices.join();
-    document.querySelector("#adjListInfo")!.innerHTML = toInfoStr(adjList);
+  for (let i = 0; i < crossPts.length; i++) {
+    const pt = crossPts[i];
+    drawPoint(pt, "#f04");
+    drawNumText(pt, allPoints.length + i, "#f04");
   }
+  document.querySelector("#outline")!.innerHTML = resultIndices.join();
+  document.querySelector("#adjListInfo")!.innerHTML = toInfoStr(adjList);
 };
 
 const drawPoint = ({ x, y }: Point, color?: string) => {
@@ -108,6 +109,19 @@ const drawNumText = (p: Point, i: number, color?: string) => {
     p.x + offsetX,
     p.y + offsetY
   );
+  ctx.restore();
+};
+
+const fillPolygon = (points: Point[]) => {
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = "#dde3e9";
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.fill();
   ctx.restore();
 };
 

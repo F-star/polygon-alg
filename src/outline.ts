@@ -6,6 +6,15 @@ import { getNewPolygon } from "./util";
 export const getOutlinePolygon = (points: Point[]) => {
   const { crossPts, adjList } = getNewPolygon(points);
   const allPoints = [...points, ...crossPts];
+  if (points.length <= 3) {
+    // console.warn("点至少得 3 个");
+    return {
+      crossPts,
+      adjList,
+      resultIndices: [],
+      resultPoints: points,
+    };
+  }
 
   // 1. 找到最底边的点，如果有多个 y 相同的点，取最左边的点
   let bottomPoint = points[0];
@@ -46,7 +55,8 @@ export const getOutlinePolygon = (points: Point[]) => {
     resultIndices.push(minRadIndex);
   }
 
-  for (let i = 1; i < 999; i++) {
+  // 99999 避免死循环
+  for (let i = 1; i < 999999; i++) {
     const prevIdx = resultIndices[i - 1];
     const currIdx = resultIndices[i];
     const prevPt = allPoints[prevIdx];
@@ -57,14 +67,6 @@ export const getOutlinePolygon = (points: Point[]) => {
     };
 
     const adjPtIndices = adjList[resultIndices[i]];
-
-    // 2 个临接点，一个一定是 preIndex，另一个就是 nextIndex
-    // 理论上可以删除，后面的代码处理了这种情况
-    // if (adjPtIndices.length === 2) {
-    //   const nextIndex = adjPtIndices.find((idx) => idx !== prevIdx)!;
-    //   resultIndices.push(nextIndex);
-    //   continue;
-    // }
 
     let minRad = Infinity;
     let minRadIndex = -1;
@@ -94,6 +96,7 @@ export const getOutlinePolygon = (points: Point[]) => {
     crossPts,
     adjList,
     resultIndices,
+    resultPoints: resultIndices.map((i) => allPoints[i]),
   };
 };
 

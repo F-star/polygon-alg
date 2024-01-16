@@ -52,12 +52,28 @@ const distance = (p1: Point, p2: Point) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 };
 
+// 去重。如果多边形相邻两个点重复，那么就保留一个
+function dedup(points: Point[]) {
+  const newPoints: Point[] = [];
+  const size = points.length;
+  for (let i = 0; i < size; i++) {
+    const p = points[i];
+    const nextP = points[(i + 1) % size];
+    if (p.x !== nextP.x || p.y !== nextP.y) {
+      newPoints.push(p);
+    }
+  }
+  return newPoints;
+}
+
 export function getNewPolygon(points: Point[]) {
+  points = dedup(points);
+
   const crossPts: Point[] = [];
   const adjList = getAdjList(points);
 
   if (points.length < 3) {
-    console.warn("点至少得 3 个");
+    // console.warn("点至少得 3 个");
     return { crossPts, adjList };
   }
 
@@ -101,9 +117,6 @@ export function getNewPolygon(points: Point[]) {
         // 计算相对 line1Start 的距离
         const crossPtIdx = size + crossPts.length - 1;
         // console.log("crossPtIdx", crossPtIdx);
-        if (crossPtIdx === 5) {
-          debugger;
-        }
 
         /************ 更新 line1Dist 和 line2 对应的邻接表 ********/
         {
