@@ -1,9 +1,11 @@
 // 计算轮廓线
 
 import { Point } from "./type";
-import { getNewPolygon } from "./util";
+import { dedup, getNewPolygon } from "./util";
 
 export const getOutlinePolygon = (points: Point[]) => {
+  points = dedup(points);
+
   const { crossPts, adjList } = getNewPolygon(points);
   const allPoints = [...points, ...crossPts];
   if (points.length <= 3) {
@@ -130,14 +132,6 @@ function getVectorRadian(
 function rad2deg(rad: number) {
   return (rad * 180) / Math.PI;
 }
-
-// function crossProduct(p1: Point, p2: Point, p3: Point): number {
-//   const x1 = p2.x - p1.x;
-//   const y1 = p2.y - p1.y;
-//   const x2 = p3.x - p1.x;
-//   const y2 = p3.y - p1.y;
-//   return x1 * y2 - x2 * y1;
-// }
 
 function crossProduct(v1: Point, v2: Point): number {
   return v1.x * v2.y - v2.x * v1.y;

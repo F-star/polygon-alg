@@ -53,7 +53,7 @@ const distance = (p1: Point, p2: Point) => {
 };
 
 // 去重。如果多边形相邻两个点重复，那么就保留一个
-function dedup(points: Point[]) {
+export function dedup(points: Point[]) {
   const newPoints: Point[] = [];
   const size = points.length;
   for (let i = 0; i < size; i++) {
@@ -67,8 +67,6 @@ function dedup(points: Point[]) {
 }
 
 export function getNewPolygon(points: Point[]) {
-  points = dedup(points);
-
   const crossPts: Point[] = [];
   const adjList = getAdjList(points);
 
@@ -259,4 +257,12 @@ function getAdjList(points: Point[]) {
   return adjList;
 }
 
-console.log("测试", getAdjList(points));
+// console.log(
+//   "测试",
+//   dedup([
+//     { x: 0, y: 0 },
+//     { x: 1, y: 1 },
+//     { x: 1, y: 1 },
+//     { x: 0, y: 0 },
+//   ])
+// );
