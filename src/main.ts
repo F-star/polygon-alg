@@ -2,11 +2,7 @@ import { getOutlinePolygon } from "./outline";
 import { Point } from "./type";
 import "./util";
 
-const canvas = document.querySelector("canvas")!;
-const ctx = canvas.getContext("2d")!;
-
-canvas.width = 600;
-canvas.height = 600;
+const canvas = document.querySelector("#draw-area") as HTMLCanvasElement;
 
 /**
  * @type {{x:number, y:number}[]}
@@ -48,42 +44,40 @@ const draw = () => {
     allPoints.push(nextPoint);
   }
 
+  const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // 计算交点
   // if (allPoints.length > 3) {
   const { crossPts, adjList, resultIndices, resultPoints } =
     getOutlinePolygon(allPoints);
-  fillPolygon(resultPoints);
 
-  // 绘制线
-  ctx.beginPath();
-  for (let i = 0; i < allPoints.length; i++) {
-    const p = allPoints[i];
-    ctx.lineTo(p.x, p.y);
-  }
-  if (nextPoint) {
-    ctx.lineTo(nextPoint.x, nextPoint.y);
-  }
-  ctx.closePath();
-  ctx.stroke();
+  // fillPolygon(ctx, resultPoints);
+  drawOutlinePolygon(resultPoints);
+
+  strokePolygon(ctx, allPoints);
 
   for (let i = 0; i < allPoints.length; i++) {
     const p = allPoints[i];
-    drawPoint(p);
-    drawNumText(p, i);
+    drawPoint(ctx, p);
+    drawNumText(ctx, p, i + "");
   }
 
   for (let i = 0; i < crossPts.length; i++) {
     const pt = crossPts[i];
-    drawPoint(pt, "#f04");
-    drawNumText(pt, allPoints.length + i, "#f04");
+    drawPoint(ctx, pt, "#f04");
+    drawNumText(ctx, pt, allPoints.length + i + "", "#f04");
   }
-  document.querySelector("#outline")!.innerHTML = resultIndices.join();
+  document.querySelector("#outlinePoints")!.innerHTML =
+    resultIndices.join(", ");
   document.querySelector("#adjListInfo")!.innerHTML = toInfoStr(adjList);
 };
 
-const drawPoint = ({ x, y }: Point, color?: string) => {
+const drawPoint = (
+  ctx: CanvasRenderingContext2D,
+  { x, y }: Point,
+  color?: string
+) => {
   ctx.save();
   if (color) {
     ctx.fillStyle = color;
@@ -95,24 +89,42 @@ const drawPoint = ({ x, y }: Point, color?: string) => {
   ctx.restore();
 };
 
-const drawNumText = (p: Point, i: number, color?: string) => {
+const drawNumText = (
+  ctx: CanvasRenderingContext2D,
+  p: Point,
+  text: string,
+  color?: string,
+  offsetX = -3
+) => {
   ctx.save();
-  const offsetX = -3;
   const offsetY = -10;
   if (color) {
     ctx.fillStyle = color;
   }
   ctx.font = "12px sans-serif";
   ctx.fillText(
-    // `${i}(${parseFloat(p.x.toFixed(1))},${parseFloat(p.y.toFixed(1))})`,
-    `${i}`,
+    // `${text}(${parseFloat(p.x.toFixed(1))},${parseFloat(p.y.toFixed(1))})`,
+    text,
     p.x + offsetX,
     p.y + offsetY
   );
   ctx.restore();
 };
 
-const fillPolygon = (points: Point[]) => {
+function strokePolygon(ctx: CanvasRenderingContext2D, points: Point[]) {
+  // 绘制线
+  ctx.save();
+  ctx.beginPath();
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function fillPolygon(ctx: CanvasRenderingContext2D, points: Point[]) {
   ctx.save();
   ctx.beginPath();
   ctx.fillStyle = "#dde3e9";
@@ -123,7 +135,7 @@ const fillPolygon = (points: Point[]) => {
   ctx.closePath();
   ctx.fill();
   ctx.restore();
-};
+}
 
 const toInfoStr = (adjList: number[][]) => {
   return adjList
@@ -132,6 +144,31 @@ const toInfoStr = (adjList: number[][]) => {
     })
     .join("<br>");
 };
+
+function drawOutlinePolygon(points: Point[]) {
+  const outlineCanvas = document.querySelector("#outline") as HTMLCanvasElement;
+  const ctx = outlineCanvas.getContext("2d")!;
+  ctx.clearRect(0, 0, outlineCanvas.width, outlineCanvas.height);
+
+  fillPolygon(ctx, points);
+
+  strokePolygon(ctx, points);
+
+  const visited = new Set<string>();
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    drawPoint(ctx, p);
+    const key = `${p.x}-${p.y}`;
+    if (visited.has(key)) {
+      drawNumText(ctx, p, `(${i})`, undefined, 10);
+
+      continue;
+    } else {
+      visited.add(key);
+      drawNumText(ctx, p, i + "");
+    }
+  }
+}
 
 canvas.addEventListener("mousedown", onMousedown);
 canvas.addEventListener("mousemove", onMousemove);

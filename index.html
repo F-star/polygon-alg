@@ -11,17 +11,22 @@
         padding: 0;
       }
       canvas {
-        cursor: none;
+        /* cursor: none; */
         border: 1px solid #000;
       }
     </style>
   </head>
   <body>
-    <div>
-      <canvas></canvas>
-      <div id="outline"></div>
-      <div>邻接表</div>
-      <div id="adjListInfo" style="padding: 10px"></div>
+    <div style="display: flex">
+      <canvas id="draw-area" width="500" height="500"></canvas>
+      <canvas id="outline" width="500" height="500"></canvas>
+    </div>
+    <div style="padding: 10px">
+      <div>轮廓多边形：</div>
+      <div id="outlinePoints"></div>
+      <br />
+      <div>邻接表：</div>
+      <div id="adjListInfo" style="max-height: 300px; overflow-y: scroll"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
