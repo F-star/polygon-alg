@@ -43,12 +43,17 @@ const onMousemove = (e: MouseEvent) => {
 };
 
 const draw = () => {
+  const allPoints = [...points];
+  if (nextPoint) {
+    allPoints.push(nextPoint);
+  }
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // 绘制线
   ctx.beginPath();
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
+  for (let i = 0; i < allPoints.length; i++) {
+    const p = allPoints[i];
     ctx.lineTo(p.x, p.y);
   }
   if (nextPoint) {
@@ -57,18 +62,20 @@ const draw = () => {
   ctx.closePath();
   ctx.stroke();
 
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
+  for (let i = 0; i < allPoints.length; i++) {
+    const p = allPoints[i];
     drawPoint(p);
+    drawNumText(p, i);
   }
-  if (nextPoint) {
-    drawPoint(nextPoint);
-  }
+
   // 计算交点
-  if (points.length + 1 >= 3) {
-    const intersectionPoints = getNewPolygon([...points, nextPoint!], []);
-    for (const pt of intersectionPoints) {
+  if (allPoints.length >= 3) {
+    const crossPts = getNewPolygon(allPoints);
+    // for (const pt of crossPts) {
+    for (let i = 0; i < crossPts.length; i++) {
+      const pt = crossPts[i];
       drawPoint(pt, "#f04");
+      drawNumText(pt, allPoints.length + i, "#f04");
     }
   }
 };
@@ -82,6 +89,22 @@ const drawPoint = ({ x, y }: Point, color?: string) => {
   ctx.arc(x, y, 2, 0, Math.PI * 2);
   ctx.fill();
   ctx.closePath();
+  ctx.restore();
+};
+
+const drawNumText = (p: Point, i: number, color?: string) => {
+  ctx.save();
+  const offsetX = -3;
+  const offsetY = -10;
+  if (color) {
+    ctx.fillStyle = color;
+  }
+  ctx.font = "12px sans-serif";
+  ctx.fillText(
+    `${i}(${parseFloat(p.x.toFixed(1))},${parseFloat(p.y.toFixed(1))})`,
+    p.x + offsetX,
+    p.y + offsetY
+  );
   ctx.restore();
 };
 
