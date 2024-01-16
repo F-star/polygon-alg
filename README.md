@@ -2,4 +2,6 @@
 
 类似凹包，但这里有边缘的限制，所以只有唯一解。
 
+demo 地址：https://f-star.github.io/polygon-alg/
+
 ![demo](./polygon-alg-demo-test.gif)
