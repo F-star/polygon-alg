@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "github-page:build": "pnpm build --base=\"./\" --outDir docs"
   },
   "devDependencies": {
     "typescript": "^5.2.2",

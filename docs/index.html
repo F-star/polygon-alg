@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>多边形相关算法</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        /* cursor: none; */
+        border: 1px solid #000;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-JLnLro5i.js"></script>
+  </head>
+  <body>
+    <div style="display: flex">
+      <canvas id="draw-area" width="500" height="500"></canvas>
+      <canvas id="outline" width="500" height="500"></canvas>
+    </div>
+    <div style="padding: 10px">
+      <div>轮廓多边形：</div>
+      <div id="outlinePoints"></div>
+      <br />
+      <div>邻接表：</div>
+      <div id="adjListInfo" style="max-height: 300px; overflow-y: scroll"></div>
+    </div>
+  </body>
+</html>
