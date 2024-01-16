@@ -53,13 +53,14 @@ const distance = (p1: Point, p2: Point) => {
 };
 
 export function getNewPolygon(points: Point[]) {
-  if (points.length < 3) {
-    console.warn("点至少得 3 个");
-    return [];
-  }
-
   const crossPts: Point[] = [];
   const adjList = getAdjList(points);
+
+  if (points.length < 3) {
+    console.warn("点至少得 3 个");
+    return { crossPts, adjList };
+  }
+
   /**
    * {
    * [距离, 索引值]
@@ -90,7 +91,7 @@ export function getNewPolygon(points: Point[]) {
         line2End
       );
       if (crossPt) {
-        console.log(`${i}-${i + 1}, ${j}-${j + 1}`);
+        // console.log(`${i}-${i + 1}, ${j}-${j + 1}`);
         crossPts.push(crossPt);
 
         // 更新邻接表
@@ -193,10 +194,10 @@ export function getNewPolygon(points: Point[]) {
     }
   }
 
-  const newPoints = points.concat(crossPts);
-  console.log("新的点", newPoints);
-  console.log("新的邻接表", adjList);
-  return crossPts;
+  // const newPoints = points.concat(crossPts);
+  // console.log("新的点", newPoints);
+  // console.log("新的邻接表", adjList);
+  return { crossPts, adjList };
 }
 
 // 多边形

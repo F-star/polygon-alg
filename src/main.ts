@@ -1,6 +1,6 @@
+import { getOutlinePolygon } from "./outline";
 import { Point } from "./type";
 import "./util";
-import { getNewPolygon } from "./util";
 
 const canvas = document.querySelector("canvas")!;
 const ctx = canvas.getContext("2d")!;
@@ -69,14 +69,16 @@ const draw = () => {
   }
 
   // 计算交点
-  if (allPoints.length >= 3) {
-    const crossPts = getNewPolygon(allPoints);
+  if (allPoints.length > 3) {
+    const { crossPts, adjList, resultIndices } = getOutlinePolygon(allPoints);
     // for (const pt of crossPts) {
     for (let i = 0; i < crossPts.length; i++) {
       const pt = crossPts[i];
       drawPoint(pt, "#f04");
       drawNumText(pt, allPoints.length + i, "#f04");
     }
+    document.querySelector("#outline")!.innerHTML = resultIndices.join();
+    document.querySelector("#adjListInfo")!.innerHTML = toInfoStr(adjList);
   }
 };
 
@@ -101,11 +103,20 @@ const drawNumText = (p: Point, i: number, color?: string) => {
   }
   ctx.font = "12px sans-serif";
   ctx.fillText(
-    `${i}(${parseFloat(p.x.toFixed(1))},${parseFloat(p.y.toFixed(1))})`,
+    // `${i}(${parseFloat(p.x.toFixed(1))},${parseFloat(p.y.toFixed(1))})`,
+    `${i}`,
     p.x + offsetX,
     p.y + offsetY
   );
   ctx.restore();
+};
+
+const toInfoStr = (adjList: number[][]) => {
+  return adjList
+    .map((item, i) => {
+      return `${i}: [${item.join(", ")}]`;
+    })
+    .join("<br>");
 };
 
 canvas.addEventListener("mousedown", onMousedown);
