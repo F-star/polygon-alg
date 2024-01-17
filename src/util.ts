@@ -52,8 +52,8 @@ const distance = (p1: Point, p2: Point) => {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 };
 
-// 去重。如果多边形相邻两个点重复，那么就保留一个
-export function dedup(points: Point[]) {
+// 去重。如果多边形相邻多个点重复，那么就只保留一个
+function dedup(points: Point[]) {
   const newPoints: Point[] = [];
   const size = points.length;
   for (let i = 0; i < size; i++) {
@@ -66,18 +66,17 @@ export function dedup(points: Point[]) {
   return newPoints;
 }
 
-export function getNewPolygon(points: Point[]) {
+function getNewPolygon(points: Point[]) {
   const crossPts: Point[] = [];
   const adjList = getAdjList(points);
 
   if (points.length < 3) {
-    // console.warn("点至少得 3 个");
     return { crossPts, adjList };
   }
 
   /**
    * {
-   * [距离, 索引值]
+   *  [某条线]: [到线起点的距离, 在 points 中的索引值]
    *  '2-3', [[0, 2], [43, 5], [92, 3]
    * }
    */
@@ -109,7 +108,6 @@ export function getNewPolygon(points: Point[]) {
         crossPts.push(crossPt);
 
         // 更新邻接表
-        // adjList.push([i, i + 1, j, line2EndIdx]); // 这里有问题。。。
         const newVertexes: number[] = [];
 
         // 计算相对 line1Start 的距离
@@ -211,16 +209,16 @@ export function getNewPolygon(points: Point[]) {
   return { crossPts, adjList };
 }
 
-// 多边形
-const points: Point[] = [
-  { x: 0, y: 0 },
-  { x: 6, y: 0 },
-  { x: 0, y: 10 },
-  { x: 6, y: 10 },
-];
+// // 多边形
+// const points: Point[] = [
+//   { x: 0, y: 0 },
+//   { x: 6, y: 0 },
+//   { x: 0, y: 10 },
+//   { x: 6, y: 10 },
+// ];
 
-const data = getNewPolygon(points);
-console.log(data);
+// const data = getNewPolygon(points);
+// console.log(data);
 
 /**
  * 计算 target 在 nums 中的位置区间
@@ -266,3 +264,140 @@ function getAdjList(points: Point[]) {
 //     { x: 0, y: 0 },
 //   ])
 // );
+
+// 计算轮廓线
+export const getOutlinePolygon = (points: Point[]) => {
+  points = dedup(points);
+
+  const { crossPts, adjList } = getNewPolygon(points);
+  const allPoints = [...points, ...crossPts];
+  if (points.length <= 3) {
+    // console.warn("点至少得 3 个");
+    return {
+      crossPts,
+      adjList,
+      resultIndices: points.map((_, i) => i),
+      resultPoints: points,
+    };
+  }
+
+  // 1. 找到最底边的点，如果有多个 y 相同的点，取最左边的点
+  let bottomPoint = points[0];
+  let bottomIndex = 0;
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i];
+    if (p.y > bottomPoint.y) {
+      bottomPoint = p;
+      bottomIndex = i;
+    } else if (p.y === bottomPoint.y && p.x < bottomPoint.x) {
+      bottomPoint = p;
+      bottomIndex = i;
+    }
+  }
+  console.log("最底边的点", bottomPoint);
+
+  const resultIndices = [bottomIndex];
+
+  // 2. 找轮廓线的第一条边
+  // TODO: 这段代码和下面的代码有点重复了，可以放一起
+  {
+    const adjPtIndices = adjList[bottomIndex];
+
+    let minRad = Infinity;
+    let minRadIndex = -1;
+    for (const index of adjPtIndices) {
+      const p = allPoints[index];
+      const rad = getVectorRadian(bottomPoint.x, bottomPoint.y, p.x, p.y, {
+        x: -1,
+        y: 0,
+      });
+      // console.log("rad" + index, rad2deg(rad));
+      if (rad < minRad) {
+        minRad = rad;
+        minRadIndex = index;
+      }
+    }
+    // console.log("逆时针的下一个点", { minRadIndex, minDeg: rad2deg(minRad) });
+    resultIndices.push(minRadIndex);
+  }
+
+  // 3. 遍历，找逆时针的下一个点
+  // 9999 避免死循环
+  for (let i = 1; i < 9999; i++) {
+    const prevIdx = resultIndices[i - 1];
+    const currIdx = resultIndices[i];
+    const prevPt = allPoints[prevIdx];
+    const currPt = allPoints[currIdx];
+    const baseVector = {
+      x: prevPt.x - currPt.x,
+      y: prevPt.y - currPt.y,
+    };
+
+    const adjPtIndices = adjList[resultIndices[i]];
+
+    let minRad = Infinity;
+    let minRadIndex = -1;
+    for (const index of adjPtIndices) {
+      if (index === prevIdx) {
+        continue;
+      }
+      const p = allPoints[index];
+      const rad = getVectorRadian(currPt.x, currPt.y, p.x, p.y, baseVector);
+      if (rad < minRad) {
+        minRad = rad;
+        minRadIndex = index;
+      }
+    }
+
+    if (minRadIndex === resultIndices[0]) {
+      console.log("完成，最终轮廓多边形为", resultIndices);
+      break; // 发现又跑到了起点，结束
+    }
+
+    resultIndices.push(minRadIndex);
+  }
+
+  console.log("轮廓多边形的点", resultIndices);
+
+  return {
+    crossPts,
+    adjList,
+    resultIndices,
+    resultPoints: resultIndices.map((i) => allPoints[i]),
+  };
+};
+
+const DOUBLE_PI = Math.PI * 2;
+/**
+ * 求向量到上边(y负半轴)的夹角
+ * 范围在 [0, Math.PI * 2)
+ */
+function getVectorRadian(
+  cx: number,
+  cy: number,
+  x: number,
+  y: number,
+  baseVector: Point
+) {
+  const a = [x - cx, y - cy];
+  const b = [baseVector.x, baseVector.y];
+
+  const dotProduct = a[0] * b[0] + a[1] * b[1];
+  const d =
+    Math.sqrt(a[0] * a[0] + a[1] * a[1]) * Math.sqrt(b[0] * b[0] + b[1] * b[1]);
+  let radian = Math.acos(dotProduct / d);
+
+  if (crossProduct(baseVector, { x: a[0], y: a[1] }) > 0) {
+    radian = DOUBLE_PI - radian;
+  }
+
+  return radian;
+}
+
+// function rad2deg(rad: number) {
+//   return (rad * 180) / Math.PI;
+// }
+
+function crossProduct(v1: Point, v2: Point): number {
+  return v1.x * v2.y - v2.x * v1.y;
+}

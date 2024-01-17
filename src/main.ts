@@ -1,6 +1,5 @@
-import { getOutlinePolygon } from "./outline";
+import { getOutlinePolygon } from "./util";
 import { Point } from "./type";
-import "./util";
 
 const canvas = document.querySelector("#draw-area") as HTMLCanvasElement;
 
