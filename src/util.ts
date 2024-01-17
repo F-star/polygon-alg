@@ -1,11 +1,11 @@
 type Point = { x: number; y: number };
 
-const getLineSegIntersection = (
+function getLineSegIntersection(
   p1: Point,
   p2: Point,
   p3: Point,
   p4: Point
-): Point | null => {
+): Point | null {
   const { x: x1, y: y1 } = p1;
   const { x: x2, y: y2 } = p2;
   const { x: x3, y: y3 } = p3;
@@ -46,11 +46,11 @@ const getLineSegIntersection = (
   }
 
   return null;
-};
+}
 
-const distance = (p1: Point, p2: Point) => {
+function distance(p1: Point, p2: Point) {
   return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-};
+}
 
 // 去重。如果多边形相邻多个点重复，那么就只保留一个
 function dedup(points: Point[]) {
@@ -68,7 +68,7 @@ function dedup(points: Point[]) {
 
 function getNewPolygon(points: Point[]) {
   const crossPts: Point[] = [];
-  const adjList = getAdjList(points);
+  const adjList = getAdjList(points.length);
 
   if (points.length < 3) {
     return { crossPts, adjList };
@@ -91,7 +91,7 @@ function getNewPolygon(points: Point[]) {
     let j = i + 2;
     for (; j < size; j++) {
       const line2EndIdx = (j + 1) % size;
-      if (i === 0 && line2EndIdx === 0) {
+      if (i === line2EndIdx) {
         // 两个是连续的线，且其中一个位置为 0，没有计算交点的意义
         continue;
       }
@@ -244,9 +244,8 @@ function getRange(nums: number[], target: number) {
 /**
  * 基于点集，计算邻接表
  */
-function getAdjList(points: Point[]) {
+function getAdjList(size: number) {
   const adjList: number[][] = [];
-  const size = points.length;
   for (let i = 0; i < size; i++) {
     const left = i - 1 < 0 ? size - 1 : i - 1;
     const right = (i + 1) % size;
@@ -266,7 +265,7 @@ function getAdjList(points: Point[]) {
 // );
 
 // 计算轮廓线
-export const getOutlinePolygon = (points: Point[]) => {
+export function getOutlinePolygon(points: Point[]) {
   points = dedup(points);
 
   const { crossPts, adjList } = getNewPolygon(points);
@@ -365,7 +364,7 @@ export const getOutlinePolygon = (points: Point[]) => {
     resultIndices,
     resultPoints: resultIndices.map((i) => allPoints[i]),
   };
-};
+}
 
 const DOUBLE_PI = Math.PI * 2;
 /**

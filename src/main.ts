@@ -102,7 +102,7 @@ const drawNumText = (
   }
   ctx.font = "12px sans-serif";
   ctx.fillText(
-    // `${text}(${parseFloat(p.x.toFixed(1))},${parseFloat(p.y.toFixed(1))})`,
+    // `${text} (${parseFloat(p.x.toFixed(1))}, ${parseFloat(p.y.toFixed(1))})`,
     text,
     p.x + offsetX,
     p.y + offsetY
