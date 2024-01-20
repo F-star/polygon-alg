@@ -66,7 +66,14 @@ function dedup(points: Point[]) {
   return newPoints;
 }
 
-function getNewPolygon(points: Point[]) {
+function replaceIdx(indices: number[], oldIdx: number, newIdx: number) {
+  const idx = indices.indexOf(oldIdx);
+  if (idx !== -1) {
+    indices[idx] = newIdx;
+  }
+}
+
+function getCrossPtsAndAdjList(points: Point[]) {
   const crossPts: Point[] = [];
   const adjList = getAdjList(points.length);
 
@@ -74,17 +81,13 @@ function getNewPolygon(points: Point[]) {
     return { crossPts, adjList };
   }
 
-  /**
-   * {
-   *  [某条线]: [到线起点的距离, 在 points 中的索引值]
-   *  '2-3', [[0, 2], [43, 5], [92, 3]
-   * }
-   */
+  // [某条线]: [到线起点的距离, 在 points 中的索引值]
+  // 如：{ '2-3', [[0, 2], [43, 5], [92, 3]] }
   const map = new Map<string, [number, number][]>();
 
   const size = points.length;
   // 1. 计算交点
-  for (let i = 0; i < size - 1; i++) {
+  for (let i = 0; i < size - 2; i++) {
     const line1Start = points[i];
     const line1End = points[i + 1];
 
@@ -106,15 +109,11 @@ function getNewPolygon(points: Point[]) {
       if (crossPt) {
         // console.log(`${i}-${i + 1}, ${j}-${j + 1}`);
         crossPts.push(crossPt);
-
         // 更新邻接表
-        const newVertexes: number[] = [];
-
-        // 计算相对 line1Start 的距离
+        const crossPtAdjPoints: number[] = [];
         const crossPtIdx = size + crossPts.length - 1;
-        // console.log("crossPtIdx", crossPtIdx);
 
-        /************ 更新 line1Dist 和 line2 对应的邻接表 ********/
+        /************ 计算 line1Dist 并更新 line1 两个点对应的邻接表 ********/
         {
           const line1Key = `${i}-${i + 1}`;
           if (!map.has(line1Key)) {
@@ -124,6 +123,7 @@ function getNewPolygon(points: Point[]) {
             ]);
           }
           const line1Dists = map.get(line1Key)!;
+          // 计算相对 line1Start 的距离
           const crossPtDist = distance(line1Start, crossPt);
           // 看看在哪两个点中间
           const [_left, _right] = getRange(
@@ -133,29 +133,21 @@ function getNewPolygon(points: Point[]) {
 
           const left = line1Dists[_left][1];
           const right = line1Dists[_right][1];
-          newVertexes.push(left, right);
-
-          line1Dists.splice(_right, 0, [crossPtDist, crossPtIdx]);
+          crossPtAdjPoints.push(left, right);
 
           // 更新邻接表
-          const adjLine1Start = adjList[left];
-          // 如果这个相交点靠近起点，替换掉原来的点
-          if (adjLine1Start.indexOf(left) !== -1) {
-            adjLine1Start[adjLine1Start.indexOf(left)] = crossPtIdx;
-          }
-          if (adjLine1Start.indexOf(right) !== -1) {
-            adjLine1Start[adjLine1Start.indexOf(right)] = crossPtIdx;
-          }
+          const line1StartAdjPoints = adjList[left];
+          replaceIdx(line1StartAdjPoints, left, crossPtIdx);
+          replaceIdx(line1StartAdjPoints, right, crossPtIdx);
 
-          const adjLine1End = adjList[right];
-          if (adjLine1End.indexOf(left) !== -1) {
-            adjLine1End[adjLine1End.indexOf(left)] = crossPtIdx;
-          }
-          if (adjLine1End.indexOf(right) !== -1) {
-            adjLine1End[adjLine1End.indexOf(right)] = crossPtIdx;
-          }
+          const line1EndAdjPoints = adjList[right];
+          replaceIdx(line1EndAdjPoints, left, crossPtIdx);
+          replaceIdx(line1EndAdjPoints, right, crossPtIdx);
+
+          // 更新 map[line1Key] 数组
+          line1Dists.splice(_right, 0, [crossPtDist, crossPtIdx]);
         }
-        /************ 更新 line2Dist 和 line1 对应的邻接表 ********/
+        /************ 计算 line2Dist 并更新 line2 两个点对应的邻接表 ********/
         {
           const line2Key = `${j}-${line2EndIdx}`;
           if (!map.has(line2Key)) {
@@ -174,31 +166,23 @@ function getNewPolygon(points: Point[]) {
 
           const left = line2Dists[_left][1];
           const right = line2Dists[_right][1];
-          newVertexes.push(left, right);
+          crossPtAdjPoints.push(left, right);
 
           line2Dists.splice(_right, 0, [crossPtDist, crossPtIdx]);
 
           // 更新邻接表
-          const adjLine2Start = adjList[left];
+          const line2StartAdjPoints = adjList[left];
           // 替换掉原来的点
-          if (adjLine2Start.indexOf(left) !== -1) {
-            adjLine2Start[adjLine2Start.indexOf(left)] = crossPtIdx;
-          }
-          if (adjLine2Start.indexOf(right) !== -1) {
-            adjLine2Start[adjLine2Start.indexOf(right)] = crossPtIdx;
-          }
+          replaceIdx(line2StartAdjPoints, left, crossPtIdx);
+          replaceIdx(line2StartAdjPoints, right, crossPtIdx);
 
-          const adjLine2End = adjList[right];
-          if (adjLine2End.indexOf(left) !== -1) {
-            adjLine2End[adjLine2End.indexOf(left)] = crossPtIdx;
-          }
-          if (adjLine2End.indexOf(right) !== -1) {
-            adjLine2End[adjLine2End.indexOf(right)] = crossPtIdx;
-          }
+          const line2EndAdjPoints = adjList[right];
+          replaceIdx(line2EndAdjPoints, left, crossPtIdx);
+          replaceIdx(line2EndAdjPoints, right, crossPtIdx);
         }
 
         // 更新邻接表
-        adjList.push(newVertexes);
+        adjList.push(crossPtAdjPoints);
       }
     }
   }
@@ -268,101 +252,85 @@ function getAdjList(size: number) {
 export function getOutlinePolygon(points: Point[]) {
   points = dedup(points);
 
-  const { crossPts, adjList } = getNewPolygon(points);
-  const allPoints = [...points, ...crossPts];
   if (points.length <= 3) {
     // console.warn("点至少得 3 个");
     return {
-      crossPts,
-      adjList,
+      crossPts: [],
+      adjList: [],
       resultIndices: points.map((_, i) => i),
       resultPoints: points,
     };
   }
+
+  console.log("---------- start ----------");
+  console.log("去重后的原始点", points);
+  const { crossPts, adjList } = getCrossPtsAndAdjList(points);
+  const allPoints = [...points, ...crossPts];
 
   // 1. 找到最底边的点，如果有多个 y 相同的点，取最左边的点
   let bottomPoint = points[0];
   let bottomIndex = 0;
   for (let i = 1; i < points.length; i++) {
     const p = points[i];
-    if (p.y > bottomPoint.y) {
-      bottomPoint = p;
-      bottomIndex = i;
-    } else if (p.y === bottomPoint.y && p.x < bottomPoint.x) {
+    if (p.y > bottomPoint.y || (p.y === bottomPoint.y && p.x < bottomPoint.x)) {
       bottomPoint = p;
       bottomIndex = i;
     }
   }
   console.log("最底边的点", bottomPoint);
 
-  const resultIndices = [bottomIndex];
+  const outlineIndices = [bottomIndex];
 
-  // 2. 找轮廓线的第一条边
-  // TODO: 这段代码和下面的代码有点重复了，可以放一起
-  {
-    const adjPtIndices = adjList[bottomIndex];
-
-    let minRad = Infinity;
-    let minRadIndex = -1;
-    for (const index of adjPtIndices) {
-      const p = allPoints[index];
-      const rad = getVectorRadian(bottomPoint.x, bottomPoint.y, p.x, p.y, {
-        x: -1,
-        y: 0,
-      });
-      // console.log("rad" + index, rad2deg(rad));
-      if (rad < minRad) {
-        minRad = rad;
-        minRadIndex = index;
-      }
-    }
-    // console.log("逆时针的下一个点", { minRadIndex, minDeg: rad2deg(minRad) });
-    resultIndices.push(minRadIndex);
-  }
-
-  // 3. 遍历，找逆时针的下一个点
+  // 2. 遍历，找逆时针的下一个点
   // 9999 避免死循环
-  for (let i = 1; i < 9999; i++) {
-    const prevIdx = resultIndices[i - 1];
-    const currIdx = resultIndices[i];
+  const MAX_LOOP = 9999;
+  for (let i = 0; i < MAX_LOOP; i++) {
+    const prevIdx = outlineIndices[i - 1];
+    const currIdx = outlineIndices[i];
     const prevPt = allPoints[prevIdx];
     const currPt = allPoints[currIdx];
-    const baseVector = {
-      x: prevPt.x - currPt.x,
-      y: prevPt.y - currPt.y,
-    };
+    const baseVector =
+      i == 0
+        ? { x: 1, y: 0 } // 对于起点，它没有前一个点，用向右的向量
+        : {
+            x: prevPt.x - currPt.x,
+            y: prevPt.y - currPt.y,
+          };
 
-    const adjPtIndices = adjList[resultIndices[i]];
+    const adjPtIndices = adjList[outlineIndices[i]];
 
     let minRad = Infinity;
-    let minRadIndex = -1;
+    let minRadIdx = -1;
     for (const index of adjPtIndices) {
       if (index === prevIdx) {
         continue;
       }
       const p = allPoints[index];
+      // FIXME: 在特殊情况下，rad 为 NaN，因为可能有重复的点。解决方法是预处理的时候做去重处理
       const rad = getVectorRadian(currPt.x, currPt.y, p.x, p.y, baseVector);
       if (rad < minRad) {
         minRad = rad;
-        minRadIndex = index;
+        minRadIdx = index;
       }
     }
 
-    if (minRadIndex === resultIndices[0]) {
-      console.log("完成，最终轮廓多边形为", resultIndices);
+    if (minRadIdx === outlineIndices[0]) {
       break; // 发现又跑到了起点，结束
     }
 
-    resultIndices.push(minRadIndex);
+    outlineIndices.push(minRadIdx);
+  }
+  if (outlineIndices.length >= MAX_LOOP) {
+    console.error(`轮廓多边形计算失败，超过最大循环次数 ${MAX_LOOP}`);
   }
 
-  console.log("轮廓多边形的点", resultIndices);
+  console.log("---------- end ----------");
 
   return {
     crossPts,
     adjList,
-    resultIndices,
-    resultPoints: resultIndices.map((i) => allPoints[i]),
+    resultIndices: outlineIndices,
+    resultPoints: outlineIndices.map((i) => allPoints[i]),
   };
 }
 
@@ -384,8 +352,12 @@ function getVectorRadian(
   const dotProduct = a[0] * b[0] + a[1] * b[1];
   const d =
     Math.sqrt(a[0] * a[0] + a[1] * a[1]) * Math.sqrt(b[0] * b[0] + b[1] * b[1]);
-  let radian = Math.acos(dotProduct / d);
+  // Math.acos(-1.0000000000000002) 会得到 NaN，这里做一个舍入处理
+  let radian = Math.acos(parseFloat((dotProduct / d).toFixed(12)));
 
+  radian = parseFloat(radian.toFixed(10));
+
+  // 对于顺时针的夹角，要用 360 减去
   if (crossProduct(baseVector, { x: a[0], y: a[1] }) > 0) {
     radian = DOUBLE_PI - radian;
   }
@@ -393,9 +365,9 @@ function getVectorRadian(
   return radian;
 }
 
-// function rad2deg(rad: number) {
-//   return (rad * 180) / Math.PI;
-// }
+function rad2deg(rad: number) {
+  return (rad * 180) / Math.PI;
+}
 
 function crossProduct(v1: Point, v2: Point): number {
   return v1.x * v2.y - v2.x * v1.y;

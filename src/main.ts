@@ -3,20 +3,9 @@ import { Point } from "./type";
 
 const canvas = document.querySelector("#draw-area") as HTMLCanvasElement;
 
-/**
- * @type {{x:number, y:number}[]}
- */
 const points: Point[] = [];
-
-/**
- * @type {{x:number, y:number} | null}
- */
 let nextPoint: Point | null = null;
 
-/**
- *
- * @param {MouseEvent} e
- */
 const onMousedown = (e: MouseEvent) => {
   // 绘制点
   const x = e.clientX;
@@ -25,10 +14,6 @@ const onMousedown = (e: MouseEvent) => {
   draw();
 };
 
-/**
- *
- * @param {MouseEvent} e
- */
 const onMousemove = (e: MouseEvent) => {
   // 暂时不需要
   const x = e.clientX;
