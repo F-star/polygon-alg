@@ -365,9 +365,9 @@ function getVectorRadian(
   return radian;
 }
 
-function rad2deg(rad: number) {
-  return (rad * 180) / Math.PI;
-}
+// function rad2deg(rad: number) {
+//   return (rad * 180) / Math.PI;
+// }
 
 function crossProduct(v1: Point, v2: Point): number {
   return v1.x * v2.y - v2.x * v1.y;
